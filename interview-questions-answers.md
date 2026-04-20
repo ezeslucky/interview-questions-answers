@@ -186,9 +186,175 @@ export default function multiply(a, b) { return a * b; }
 import multiply, { add } from './math.js';
 ```
 
+### 11. What is the spread operator and rest parameters?
+
+**Answer:**
+- **Spread**: Expands iterables into individual elements
+- **Rest**: Collects multiple elements into an array
+
+```javascript
+// Spread
+const arr1 = [1, 2, 3];
+const arr2 = [...arr1, 4, 5]; // [1, 2, 3, 4, 5]
+const obj2 = { ...obj1, c: 3 };
+
+// Rest
+function sum(...numbers) {
+  return numbers.reduce((a, b) => a + b, 0);
+}
+```
+
+### 12. Explain map, filter, and reduce.
+
+**Answer:**
+
+```javascript
+// Map - transform each element
+[1, 2, 3].map(x => x * 2); // [2, 4, 6]
+
+// Filter - keep elements matching condition
+[1, 2, 3, 4].filter(x => x > 2); // [3, 4]
+
+// Reduce - accumulate to single value
+[1, 2, 3, 4].reduce((acc, x) => acc + x, 0); // 10
+```
+
+### 13. What are Symbol and BigInt?
+
+**Answer:**
+- **Symbol**: Unique primitive, often for object keys
+- **BigInt**: Arbitrary precision integers
+
+```javascript
+const id = Symbol('id'); // Unique key
+const big = 9007199254740991n; // BigInt
+const big2 = BigInt(9007199254740991);
+```
+
+### 14. What is a generator function?
+
+**Answer:** Function that can pause and resume execution.
+
+```javascript
+function* counter() {
+  let i = 0;
+  while (true) {
+    yield i++;
+  }
+}
+
+const gen = counter();
+console.log(gen.next().value); // 0
+console.log(gen.next().value); // 1
+```
+
+### 15. Explain event delegation.
+
+**Answer:** Single event listener on parent instead of multiple on children.
+
+```javascript
+// Instead of adding listener to each li
+document.querySelector('ul').addEventListener('click', (e) => {
+  if (e.target.tagName === 'LI') {
+    console.log(e.target.textContent);
+  }
+});
+```
+
+### 16. What are Web Workers?
+
+**Answer:** Run JavaScript in background threads.
+
+```javascript
+// main.js
+const worker = new Worker('worker.js');
+worker.postMessage({ data });
+worker.onmessage = (e) => console.log(e.data);
+
+// worker.js
+onmessage = (e) => {
+  // Heavy computation
+  postMessage(result);
+};
+```
+
+### 17. What is the difference between null and undefined?
+
+**Answer:**
+- `undefined`: Variable declared but not assigned
+- `null`: Intentional absence of value (assigned by developer)
+
+```javascript
+let a; // undefined
+let b = null; // null
+typeof undefined; // "undefined"
+typeof null; // "object" (bug in JS)
+```
+
+### 18. Explain call, apply, and bind.
+
+**Answer:**
+
+```javascript
+const obj = { name: "John" };
+
+function greet(greeting, punctuation) {
+  return `${greeting}, ${this.name}${punctuation}`;
+}
+
+greet.call(obj, "Hello", "!"); // "Hello, John!"
+greet.apply(obj, ["Hello", "!"]); // "Hello, John!"
+const bound = greet.bind(obj, "Hello");
+bound("!"); // "Hello, John!"
+```
+
+### 19. What is currying?
+
+**Answer:** Transforming function with multiple args into chain of single-arg functions.
+
+```javascript
+// Normal
+function add(a, b) { return a + b; }
+
+// Curried
+function curriedAdd(a) {
+  return function(b) {
+    return a + b;
+  };
+}
+curriedAdd(5)(3); // 8
+
+// Arrow function style
+const add = a => b => a + b;
+```
+
+### 20. What is memoization?
+
+**Answer:** Caching function results for same inputs.
+
+```javascript
+function memoize(fn) {
+  const cache = new Map();
+  return function(...args) {
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key);
+    const result = fn(...args);
+    cache.set(key, result);
+    return result;
+  };
+}
+
+const memoFib = memoize(function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2);
+});
+```
+
 ---
 
 ## TypeScript
+
+### 1. What is TypeScript and why use it?
 
 ### 1. What is TypeScript and why use it?
 
@@ -333,6 +499,161 @@ class Labrador extends Dog {
 }
 ```
 
+### 9. What is declaration merging?
+
+**Answer:** TypeScript merges multiple declarations with same name.
+
+```typescript
+interface Box {
+  height: number;
+}
+interface Box {
+  width: number;
+}
+// Merged: { height: number; width: number; }
+
+namespace Box {
+  export function create() { return {}; }
+}
+```
+
+### 10. What are conditional types?
+
+**Answer:** Types that depend on a condition.
+
+```typescript
+type IsString<T> = T extends string ? true : false;
+type A = IsString<string>; // true
+type B = IsString<number>; // false
+
+// Extract with infer
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;
+```
+
+### 11. What are mapped types?
+
+**Answer:** Transform types by iterating over keys.
+
+```typescript
+type Readonly<T> = {
+  readonly [K in keyof T]: T[K];
+};
+
+type Partial<T> = {
+  [K in keyof T]?: T[K];
+};
+
+type Nullable<T> = {
+  [K in keyof T]: T[K] | null;
+};
+```
+
+### 12. Explain template literal types.
+
+**Answer:** String manipulation at type level.
+
+```typescript
+type Greeting = `Hello, ${string}`;
+type EventName = `on${Capitalize<string>}Change`;
+
+type Lowercase<T extends string> = 
+  T extends `${infer F}${infer R}` 
+    ? `${Lowercase<F>}${Lowercase<R>}` 
+    : T;
+```
+
+### 13. What is the satisfies keyword?
+
+**Answer:** Validate type without widening.
+
+```typescript
+type Colors = "red" | "green" | "blue";
+
+const palette = {
+  red: "#ff0000",
+  green: "#00ff00",
+  blue: "#0000ff",
+  yellow: "#ffff00", // Error without satisfies
+} satisfies Record<Colors, string>;
+```
+
+### 14. What are type guards?
+
+**Answer:** Narrow types within conditional blocks.
+
+```typescript
+// typeof guard
+function process(x: string | number) {
+  if (typeof x === "string") {
+    return x.toUpperCase();
+  }
+  return x.toFixed(2);
+}
+
+// instanceof guard
+function getLength(x: Date | string) {
+  if (x instanceof Date) {
+    return x.getTime();
+  }
+  return x.length;
+}
+
+// Custom type guard
+function isString(x: unknown): x is string {
+  return typeof x === "string";
+}
+```
+
+### 15. What is tsconfig.json?
+
+**Answer:** TypeScript compiler configuration.
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}
+```
+
+### 16. What is the difference as const and type assertion?
+
+**Answer:**
+- **Type assertion (`as Type`)**: Tell compiler you know better
+- **`as const`**: Make value deeply immutable, infer literal types
+
+```typescript
+const arr = ["hello", "world"]; // string[]
+const arrConst = ["hello", "world"] as const; // readonly ["hello", "world"]
+
+const obj = { a: 1 } as const; // { readonly a: 1 }
+```
+
+### 17. What are branded/nominal types?
+
+**Answer:** Create distinct types from same base type.
+
+```typescript
+type UserId = string & { readonly brand: unique symbol };
+type Email = string & { readonly brand: unique symbol };
+
+function createUserId(id: string): UserId {
+  return id as UserId;
+}
+
+function sendEmail(to: Email) { }
+sendEmail(createUserId("123")); // Error: not Email
+```
+
 ---
 
 ## Golang
@@ -470,6 +791,151 @@ case <-time.After(time.Second):
 go mod init myproject
 go get github.com/package@v1.0.0
 go mod tidy
+```
+
+### 9. What is the difference between `make` and `new`?
+
+**Answer:**
+- `make`: Allocates and initializes slices, maps, channels
+- `new`: Allocates zeroed memory, returns pointer
+
+```go
+slice := make([]int, 5, 10) // []int with len 5, cap 10
+m := make(map[string]int)   // Empty map
+ptr := new(int)             // *int pointing to zeroed int
+```
+
+### 10. Explain Go's testing package.
+
+**Answer:**
+
+```go
+// math_test.go
+package math
+
+import "testing"
+
+func TestAdd(t *testing.T) {
+    result := Add(2, 3)
+    if result != 5 {
+        t.Errorf("Expected 5, got %d", result)
+    }
+}
+
+func BenchmarkAdd(b *testing.B) {
+    for i := 0; i < b.N; i++ {
+        Add(2, 3)
+    }
+}
+
+func TestMain(m *testing.M) {
+    // Setup
+    code := m.Run()
+    // Teardown
+    os.Exit(code)
+}
+```
+
+### 11. What are Go's blank identifier and iota?
+
+**Answer:**
+- `_`: Ignore values
+- `iota`: Auto-incrementing constant generator
+
+```go
+// Blank identifier
+_, value := map["key"]
+for _, v := range slice { }
+
+// Iota
+type Status int
+const (
+    Pending Status = iota // 0
+    Approved              // 1
+    Rejected              // 2
+)
+```
+
+### 12. How does Go handle panics?
+
+**Answer:**
+
+```go
+func risky() {
+    defer func() {
+        if r := recover(); r != nil {
+            log.Println("Recovered:", r)
+        }
+    }()
+    panic("something went wrong")
+}
+
+// Best practice: use errors, not panics
+```
+
+### 13. What is Go's context package?
+
+**Answer:** Carry deadlines, cancellation signals across API boundaries.
+
+```go
+func process(ctx context.Context) error {
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    case result := <-doWork():
+        return nil
+    }
+}
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+process(ctx)
+```
+
+### 14. Explain Go's embed package.
+
+**Answer:** Embed files at compile time.
+
+```go
+import "embed"
+
+//go:embed templates/*.html
+var templates embed.FS
+
+//go:embed config.json
+var config []byte
+
+//go:embed assets
+var assets embed.FS
+```
+
+### 15. What is Go's race detector?
+
+**Answer:** Detects data races at runtime.
+
+```bash
+go run -race main.go
+go test -race ./...
+go build -race
+```
+
+### 16. How to implement inheritance in Go?
+
+**Answer:** Composition over inheritance.
+
+```go
+type Animal struct {
+    Name string
+}
+
+func (a Animal) Speak() string { return "..." }
+
+type Dog struct {
+    Animal // Embedding
+    Breed  string
+}
+
+func (d Dog) Speak() string { return "Woof!" }
 ```
 
 ---
@@ -626,6 +1092,189 @@ cargo test
 cargo add dependency
 ```
 
+### 9. What is the difference between `Copy` and `Clone`?
+
+**Answer:**
+- `Copy`: Bitwise copy, type still usable (stack types)
+- `Clone`: Deep copy, explicit call
+
+```rust
+#[derive(Copy, Clone)]
+struct Point {
+    x: i32,
+    y: i32,
+}
+
+let p1 = Point { x: 1, y: 2 };
+let p2 = p1; // Copy, p1 still usable
+let p3 = p1.clone(); // Clone
+```
+
+### 10. What are smart pointers in Rust?
+
+**Answer:**
+
+```rust
+// Box<T> - Heap allocation
+let b = Box::new(5);
+
+// Rc<T> - Reference counted (single-threaded)
+use std::rc::Rc;
+let rc = Rc::new(5);
+let rc2 = Rc::clone(&rc);
+
+// Arc<T> - Atomic reference counted (thread-safe)
+use std::sync::Arc;
+let arc = Arc::new(5);
+
+// RefCell<T> - Interior mutability
+use std::cell::RefCell;
+let cell = RefCell::new(5);
+*cell.borrow_mut() = 10;
+```
+
+### 11. Explain Rust macros.
+
+**Answer:**
+
+```rust
+// Declarative macros (macro_rules!)
+macro_rules! say_hello {
+    () => {
+        println!("Hello!");
+    };
+}
+say_hello!();
+
+// Procedural macros
+#[derive(Debug)] // Custom derive
+#[tokio::main]  // Attribute macro
+fn main() {}
+```
+
+### 12. What is unsafe Rust?
+
+**Answer:** Bypasses safety checks.
+
+```rust
+unsafe {
+    // Dereference raw pointer
+    let ptr = &mut 5 as *mut i32;
+    *ptr = 10;
+    
+    // Call unsafe function
+    unsafe_fn();
+    
+    // Access mutable static
+    STATIC_VAR = 10;
+}
+```
+
+### 13. What are closures in Rust?
+
+**Answer:** Anonymous functions capturing environment.
+
+```rust
+let x = 5;
+let add = |y| x + y;
+
+// With type annotations
+let add = |a: i32, b: i32| -> i32 { a + b };
+
+// Fn, FnMut, FnOnce
+fn call_it<F: Fn(i32) -> i32>(f: F, x: i32) -> i32 {
+    f(x)
+}
+```
+
+### 14. Explain Rust's type system features.
+
+**Answer:**
+
+```rust
+// Newtype pattern
+struct UserId(u32);
+
+// Type alias
+type Result<T> = std::result::Result<T, Error>;
+
+// Associated types
+trait Iterator {
+    type Item;
+    fn next(&mut self) -> Option<Self::Item>;
+}
+
+// PhantomData
+use std::marker::PhantomData;
+struct Ghost<T> {
+    _marker: PhantomData<T>,
+}
+```
+
+### 15. How to handle async in Rust?
+
+**Answer:**
+
+```rust
+use tokio;
+
+#[tokio::main]
+async fn main() {
+    let task1 = async { println!("Task 1"); };
+    let task2 = async { println!("Task 2"); };
+    
+    tokio::join!(task1, task2);
+    
+    // Spawn background task
+    tokio::spawn(async {
+        // Background work
+    });
+}
+```
+
+### 16. What is the borrow checker?
+
+**Answer:** Compile-time enforcement of ownership rules.
+
+```rust
+let mut s = String::from("hello");
+let r1 = &s; // OK
+let r2 = &s; // OK
+// let r3 = &mut s; // Error: can't mut borrow while immutably borrowed
+
+drop(r1);
+drop(r2);
+let r3 = &mut s; // OK now
+r3.push_str(", world");
+```
+
+### 17. Explain Rust's error handling best practices.
+
+**Answer:**
+
+```rust
+// Use Result for recoverable errors
+fn read_file(path: &str) -> Result<String, io::Error> {
+    std::fs::read_to_string(path)
+}
+
+// Use Option for absence
+fn find_user(id: u32) -> Option<User> { }
+
+// ? operator for propagation
+fn process() -> Result<(), Box<dyn std::error::Error>> {
+    let content = std::fs::read_to_string("file.txt")?;
+    Ok(())
+}
+
+// Custom error types
+#[derive(Debug)]
+enum AppError {
+    Io(io::Error),
+    Parse(ParseError),
+}
+```
+
 ---
 
 ## React.js
@@ -761,6 +1410,229 @@ function useLocalStorage(key, initialValue) {
 }
 ```
 
+### 9. What is the difference between useEffect and useLayoutEffect?
+
+**Answer:**
+- `useEffect`: Runs after paint (async)
+- `useLayoutEffect`: Runs before paint (sync, blocks rendering)
+
+```jsx
+// Use useEffect for most cases
+useEffect(() => { /* subscriptions, fetches */ }, []);
+
+// Use useLayoutEffect for DOM measurements
+useLayoutEffect(() => {
+  const rect = ref.current.getBoundingClientRect();
+  // Adjust position before paint
+}, []);
+```
+
+### 10. What are error boundaries?
+
+**Answer:** Catch JavaScript errors in child components.
+
+```jsx
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error(error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <h1>Something went wrong.</h1>;
+    }
+    return this.props.children;
+  }
+}
+```
+
+### 11. Explain React Fiber.
+
+**Answer:** New reconciliation engine in React 16.
+- Incremental rendering
+- Pause/resume work
+- Prioritize updates
+- Better animation support
+
+### 12. What is concurrent rendering?
+
+**Answer:** Multiple versions of UI in memory.
+
+```jsx
+// Start transition without blocking
+import { useTransition } from 'react';
+
+const [isPending, startTransition] = useTransition();
+
+startTransition(() => {
+  setSearchQuery(input); // Non-urgent update
+});
+
+// useDeferredValue
+const deferredQuery = useDeferredValue(query);
+```
+
+### 13. What are React portals?
+
+**Answer:** Render children outside parent DOM hierarchy.
+
+```jsx
+function Modal({ children }) {
+  return ReactDOM.createPortal(
+    <div className="modal">{children}</div>,
+    document.getElementById('modal-root')
+  );
+}
+```
+
+### 14. Explain forwardRef and useImperativeHandle.
+
+**Answer:**
+
+```jsx
+// forwardRef - pass ref through components
+const FancyInput = React.forwardRef((props, ref) => (
+  <input ref={ref} className="fancy" />
+));
+
+// useImperativeHandle - customize exposed methods
+function FancyInput(props, ref) {
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current.focus(),
+    clear: () => inputRef.current.value = ''
+  }));
+  
+  return <input ref={inputRef} />;
+}
+```
+
+### 15. What is the difference between useMemo and useCallback?
+
+**Answer:**
+- `useMemo`: Memoizes computed value
+- `useCallback`: Memoizes function reference
+
+```jsx
+// useMemo - avoid expensive calculations
+const sorted = useMemo(() => items.sort(), [items]);
+
+// useCallback - prevent function re-creation
+const handleClick = useCallback(() => {
+  doSomething(id);
+}, [id]);
+
+// Pass to memoized child
+<MemoChild onClick={handleClick} />
+```
+
+### 16. How to optimize React performance?
+
+**Answer:**
+
+```jsx
+// 1. React.memo for components
+const MemoChild = React.memo(Child);
+
+// 2. useMemo for expensive calculations
+const result = useMemo(() => heavy(items), [items]);
+
+// 3. useCallback for stable function refs
+const callback = useCallback(() => {}, []);
+
+// 4. Code splitting
+const LazyComponent = React.lazy(() => import('./Heavy'));
+
+// 5. Virtual lists for large data
+import { FixedSizeList } from 'react-window';
+
+// 6. Avoid inline objects/functions in JSX
+```
+
+### 17. What are synthetic events?
+
+**Answer:** React's cross-browser wrapper around native events.
+
+```jsx
+function handleClick(e) {
+  e.preventDefault(); // Works across browsers
+  e.stopPropagation();
+  e.nativeEvent; // Access native event
+}
+```
+
+### 18. Explain React Server Components.
+
+**Answer:** Components rendered on server, no client JS.
+
+```jsx
+// Server Component (default in App Router)
+async function Note({ id }) {
+  const note = await db.note.find(id); // Direct DB access
+  return <div>{note.content}</div>;
+}
+
+// Client Component
+'use client';
+function Counter() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
+}
+```
+
+### 19. What is Suspense?
+
+**Answer:** Declaratively wait for something to load.
+
+```jsx
+<Suspense fallback={<Spinner />}>
+  <ProfileDetails />
+</Suspense>
+
+// With lazy loading
+const LazyComponent = React.lazy(() => import('./Heavy'));
+
+<Suspense fallback={<Loading />}>
+  <LazyComponent />
+</Suspense>
+```
+
+### 20. How to handle forms in React?
+
+**Answer:**
+
+```jsx
+// Controlled form
+function Form() {
+  const [values, setValues] = useState({ name: '', email: '' });
+  
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    submit(values);
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <input 
+        value={values.name}
+        onChange={e => setValues({...values, name: e.target.value})}
+      />
+    </form>
+  );
+}
+
+// Using React Hook Form
+const { register, handleSubmit } = useForm();
+```
+
 ---
 
 ## Next.js
@@ -863,6 +1735,147 @@ app/
 
 Benefits: Auto WebP/AVIF, lazy loading, size optimization, CLS prevention.
 
+### 7. What is Incremental Static Regeneration (ISR)?
+
+**Answer:** Update static content after build without rebuilding.
+
+```jsx
+export async function getStaticProps() {
+  return {
+    props: { data },
+    revalidate: 60, // Regenerate every 60 seconds
+  };
+}
+
+// On-demand ISR
+await res.revalidate('/blog/post-slug');
+```
+
+### 8. How to handle API routes in Next.js?
+
+**Answer:**
+
+```jsx
+// pages/api/users.js
+export default function handler(req, res) {
+  if (req.method === 'GET') {
+    res.status(200).json(users);
+  } else if (req.method === 'POST') {
+    const user = createUser(req.body);
+    res.status(201).json(user);
+  }
+}
+
+// App Router (app/api/route.ts)
+export async function POST(request: Request) {
+  const body = await request.json();
+  return Response.json({ success: true });
+}
+```
+
+### 9. What is middleware in Next.js?
+
+**Answer:** Run code before request completion.
+
+```ts
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('token');
+  
+  if (!token) {
+    return NextResponse.redirect('/login');
+  }
+  
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/dashboard/:path*',
+};
+```
+
+### 10. Explain Next.js routing features.
+
+**Answer:**
+
+```
+app/
+  (auth)/           # Route group (not in URL)
+    login/page.tsx
+  /blog/
+    [slug]/         # Dynamic route
+      page.tsx
+    [...slug]/      # Catch-all
+      page.tsx
+    [[...slug]]/    # Optional catch-all
+      page.tsx
+  /api/             # API routes
+```
+
+### 11. How to implement authentication in Next.js?
+
+**Answer:**
+
+```jsx
+// Using NextAuth.js
+import NextAuth from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+
+export default NextAuth({
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_ID,
+      clientSecret: process.env.GOOGLE_SECRET,
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      return token;
+    },
+  },
+});
+
+// Usage
+import { useSession, signIn, signOut } from 'next-auth/react';
+```
+
+### 12. What is the difference between client and server components?
+
+**Answer:**
+
+| Server Components | Client Components |
+|-------------------|-------------------|
+| Render on server | Render on client |
+| No useState/useEffect | Full interactivity |
+| Direct DB access | API calls |
+| Smaller bundle size | Browser APIs access |
+| Default in App Router | Need 'use client' |
+
+### 13. How to handle SEO in Next.js?
+
+**Answer:**
+
+```jsx
+// Metadata API (App Router)
+export const metadata = {
+  title: 'My Page',
+  description: 'Page description',
+  openGraph: {
+    title: 'OG Title',
+    images: ['/og-image.jpg'],
+  },
+};
+
+// generateMetadata for dynamic pages
+export async function generateMetadata({ params }) {
+  const post = await getPost(params.slug);
+  return { title: post.title };
+}
+```
+
 ---
 
 ## Redux
@@ -930,6 +1943,93 @@ Don't use for:
 - Simple prop drilling
 - Form state (use React Hook Form)
 
+### 5. What is Redux Selector?
+
+**Answer:** Extract data from state.
+
+```jsx
+import { useSelector } from 'react-redux';
+
+// Basic selector
+const count = useSelector(state => state.counter.value);
+
+// Memoized selector with reselect
+import { createSelector } from '@reduxjs/toolkit';
+
+const selectTodos = state => state.todos;
+const selectCompletedTodos = createSelector(
+  [selectTodos],
+  todos => todos.filter(t => t.completed)
+);
+```
+
+### 6. Explain Redux middleware.
+
+**Answer:** Intercept and process actions.
+
+```jsx
+// Custom middleware
+const loggerMiddleware = store => next => action => {
+  console.log('Dispatching:', action);
+  const result = next(action);
+  console.log('Next state:', store.getState());
+  return result;
+};
+
+// Built-in middleware
+import { configureStore } from '@reduxjs/toolkit';
+const store = configureStore({
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(loggerMiddleware),
+});
+```
+
+### 7. What is Redux Persist?
+
+**Answer:** Persist Redux state to localStorage.
+
+```jsx
+import { persistStore, persistReducer } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
+
+const persistConfig = {
+  key: 'root',
+  storage,
+  whitelist: ['auth', 'preferences'],
+};
+
+const persistedReducer = persistReducer(persistConfig, reducer);
+const store = configureStore({ reducer: persistedReducer });
+const persistor = persistStore(store);
+```
+
+### 8. What is RTK Query?
+
+**Answer:** Data fetching built into Redux Toolkit.
+
+```jsx
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+
+const api = createApi({
+  baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
+  endpoints: (builder) => ({
+    getPosts: builder.query({
+      query: () => 'posts',
+    }),
+    addPost: builder.mutation({
+      query: (body) => ({
+        url: 'posts',
+        method: 'POST',
+        body,
+      }),
+    }),
+  }),
+});
+
+export const { useGetPostsQuery, useAddPostMutation } = api;
+```
+
 ---
 
 ## Tailwind CSS
@@ -994,6 +2094,81 @@ module.exports = {
 
 ```html
 <div class="bg-white dark:bg-gray-800 text-black dark:text-white">
+```
+
+### 5. What are Tailwind plugins?
+
+**Answer:**
+
+```js
+// tailwind.config.js
+plugins: [
+  require('@tailwindcss/forms'),
+  require('@tailwindcss/typography'),
+  require('@tailwindcss/aspect-ratio'),
+  require('@tailwindcss/line-clamp'),
+  
+  // Custom plugin
+  function({ addUtilities }) {
+    addUtilities({
+      '.text-shadow': {
+        textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+      },
+    });
+  },
+];
+```
+
+### 6. How to optimize Tailwind for production?
+
+**Answer:**
+- JIT mode (default in v3) - generates only used classes
+- PurgeCSS removes unused classes
+- Proper `content` configuration
+
+```js
+module.exports = {
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './pages/**/*.{js,ts,jsx,tsx}',
+  ],
+  theme: { extend: {} },
+  plugins: [],
+}
+```
+
+### 7. What are arbitrary values in Tailwind?
+
+**Answer:**
+
+```html
+<div class="w-[350px] h-[500px] bg-[#1a2b3c]">
+  <p class="text-[14px] leading-[1.5]">
+  <div class="grid grid-cols-[1fr,2fr,1fr]">
+```
+
+### 8. How to compose components with Tailwind?
+
+**Answer:**
+
+```jsx
+// Using clsx or classnames
+import clsx from 'clsx';
+
+function Button({ variant = 'primary', className, ...props }) {
+  const base = 'px-4 py-2 rounded font-medium';
+  const variants = {
+    primary: 'bg-blue-500 text-white hover:bg-blue-600',
+    secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
+  };
+  
+  return (
+    <button className={clsx(base, variants[variant], className)} {...props} />
+  );
+}
+
+// Using @apply in CSS
+@apply px-4 py-2 rounded font-medium;
 ```
 
 ---
@@ -1106,6 +2281,178 @@ fs.createReadStream('input.txt').pipe(fs.createWriteStream('output.txt'));
 
 **Answer:** C library providing async I/O, thread pool, event loop.
 
+### 8. How to handle environment variables in Node.js?
+
+**Answer:**
+
+```javascript
+// Using dotenv
+require('dotenv').config();
+
+const port = process.env.PORT || 3000;
+const dbUrl = process.env.DATABASE_URL;
+
+// Best practices
+const config = {
+  development: { port: 3000, debug: true },
+  production: { port: 80, debug: false },
+};
+
+const env = process.env.NODE_ENV || 'development';
+module.exports = config[env];
+```
+
+### 9. What is the Buffer class in Node.js?
+
+**Answer:** Handle binary data.
+
+```javascript
+const buf = Buffer.from('Hello', 'utf8');
+console.log(buf.toString('hex')); // 48656c6c6f
+console.log(buf.toString('base64')); // SGVsbG8=
+
+// Create buffer
+const buf2 = Buffer.alloc(1024);
+const buf3 = Buffer.from([0x62, 0x75, 0x66]);
+
+// Concatenate
+const combined = Buffer.concat([buf, buf2]);
+```
+
+### 10. Explain Node.js child_process module.
+
+**Answer:** Spawn system processes.
+
+```javascript
+const { exec, execSync, spawn, fork } = require('child_process');
+
+// exec - callback with stdout/stderr
+exec('ls -la', (err, stdout, stderr) => {
+  if (err) return console.error(err);
+  console.log(stdout);
+});
+
+// spawn - streaming
+const child = spawn('ls', ['-la']);
+child.stdout.on('data', (data) => console.log(data.toString()));
+
+// fork - communicate with Node processes
+const worker = fork('worker.js');
+worker.send({ cmd: 'process' });
+worker.on('message', (msg) => console.log(msg));
+```
+
+### 11. How to debug Node.js applications?
+
+**Answer:**
+
+```bash
+# Built-in debugger
+node inspect app.js
+node --inspect app.js  # Chrome DevTools
+
+# Debug module
+const debug = require('debug')('app:start');
+debug('Starting application');
+
+# Console methods
+console.trace('Trace execution');
+console.assert(condition, 'Message');
+console.time('operation');
+// ... operation
+console.timeEnd('operation');
+```
+
+### 12. What is the EventEmitter class?
+
+**Answer:** Handle custom events.
+
+```javascript
+const EventEmitter = require('events');
+class MyEmitter extends EventEmitter {}
+
+const emitter = new MyEmitter();
+
+emitter.on('event', (arg) => {
+  console.log('Event fired:', arg);
+});
+
+emitter.once('event', () => {
+  // Only fires once
+});
+
+emitter.emit('event', 'data');
+emitter.removeListener('event', callback);
+```
+
+### 13. Explain Node.js performance optimization.
+
+**Answer:**
+
+```javascript
+// 1. Use clustering
+const cluster = require('cluster');
+if (cluster.isPrimary) {
+  for (let i = 0; i < os.cpus().length; i++) cluster.fork();
+}
+
+// 2. Use streams for large files
+readable.pipe(transform).pipe(writable);
+
+// 3. Cache frequently accessed data
+const cache = new Map();
+
+// 4. Use worker threads for CPU-bound tasks
+const { Worker } = require('worker_threads');
+
+// 5. Connection pooling for databases
+
+// 6. Monitor with clinic.js, 0x, or APM tools
+```
+
+### 14. What is the difference between setImmediate and process.nextTick?
+
+**Answer:**
+
+```javascript
+// process.nextTick - executes immediately after current operation
+process.nextTick(() => console.log('nextTick'));
+
+// setImmediate - executes in check phase of event loop
+setImmediate(() => console.log('immediate'));
+
+// Example showing difference
+fs.readFile('file.txt', () => {
+  setImmediate(() => console.log('immediate'));
+  process.nextTick(() => console.log('nextTick'));
+});
+// Output: nextTick, immediate
+```
+
+### 15. How to handle file uploads in Node.js?
+
+**Answer:**
+
+```javascript
+// Using multer
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  console.log(req.file); // Uploaded file info
+  res.json({ filename: req.file.filename });
+});
+
+// Multiple files
+app.post('/upload-multiple', upload.array('photos', 10), (req, res) => { });
+
+// Using streams
+const form = new IncomingForm();
+form.on('file', (name, file) => {
+  // Handle file
+});
+```
+
 ---
 
 ## Express.js
@@ -1165,6 +2512,178 @@ app.get('/users', asyncHandler(async (req, res) => {
   const users = await User.find();
   res.json(users);
 }));
+```
+
+### 5. How to implement authentication in Express?
+
+**Answer:**
+
+```javascript
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
+// Register
+app.post('/register', async (req, res) => {
+  const { email, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = await User.create({ email, password: hashedPassword });
+  res.json({ id: user.id });
+});
+
+// Login
+app.post('/login', async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user || !await bcrypt.compare(req.body.password, user.password)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET);
+  res.json({ token });
+});
+
+// Auth middleware
+const auth = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+  }
+};
+```
+
+### 6. How to validate request data in Express?
+
+**Answer:**
+
+```javascript
+// Using express-validator
+const { body, validationResult } = require('express-validator');
+
+app.post('/users',
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 6 }),
+  body('name').trim().notEmpty(),
+  (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    // Process valid data
+  }
+);
+
+// Using Joi
+const Joi = require('joi');
+const schema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+});
+```
+
+### 7. Explain Express response methods.
+
+**Answer:**
+
+```javascript
+// Send JSON
+res.json({ key: 'value' });
+
+// Send HTML
+res.send('<h1>Hello</h1>');
+
+// Send file
+res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+// Download file
+res.download('/path/to/file.pdf', 'custom-name.pdf');
+
+// Redirect
+res.redirect(301, '/new-path');
+res.redirect('/login');
+
+// Set headers
+res.set('X-Custom-Header', 'value');
+res.cookie('session', token, { httpOnly: true, maxAge: 3600000 });
+
+// Status codes
+res.status(201).json({ created: true });
+res.status(404).json({ error: 'Not found' });
+```
+
+### 8. How to implement rate limiting in Express?
+
+**Answer:**
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { error: 'Too many requests, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+
+// Per-user rate limiting
+const userIdLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user.id,
+});
+```
+
+### 9. How to handle CORS in Express?
+
+**Answer:**
+
+```javascript
+const cors = require('cors');
+
+// Enable all CORS
+app.use(cors());
+
+// Configure CORS
+app.use(cors({
+  origin: 'https://example.com',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+// Per-route CORS
+app.post('/api/data', cors(), (req, res) => { });
+```
+
+### 10. How to structure a large Express application?
+
+**Answer:**
+
+```
+src/
+├── config/
+│   ├── database.js
+│   └── passport.js
+├── controllers/
+│   ├── userController.js
+│   └── postController.js
+├── models/
+│   ├── User.js
+│   └── Post.js
+├── routes/
+│   ├── users.js
+│   └── posts.js
+├── middleware/
+│   ├── auth.js
+│   └── validation.js
+├── services/
+│   └── emailService.js
+├── utils/
+│   └── helpers.js
+└── app.js
 ```
 
 ---
@@ -1254,6 +2773,202 @@ async def checkout(background_tasks: BackgroundTasks):
     return {"message": "Processing"}
 ```
 
+### 5. How to implement authentication in FastAPI?
+
+**Answer:**
+
+```python
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def verify_password(plain, hashed):
+    return pwd_context.verify(plain, hashed)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: timedelta):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + expires_delta
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(status_code=401)
+        return get_user(username)
+    except JWTError:
+        raise HTTPException(status_code=401)
+```
+
+### 6. How to connect FastAPI to a database?
+
+**Answer:**
+
+```python
+# SQLAlchemy integration
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+DATABASE_URL = "postgresql://user:pass@localhost/db"
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Model
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True)
+
+# CRUD
+@app.post("/users/")
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = User(email=user.email)
+    db.add(db_user)
+    db.commit()
+    return db_user
+```
+
+### 7. How to document APIs in FastAPI?
+
+**Answer:**
+
+```python
+# Automatic OpenAPI docs at /docs and /redoc
+@app.post("/items/", tags=["items"], summary="Create item")
+async def create_item(
+    item: Item,
+    description: str = "Item description",
+    response_model=ItemOut,
+    status_code=201,
+    responses={
+        400: {"description": "Bad request"},
+        404: {"description": "Not found"},
+    }
+):
+    """
+    Create a new item.
+    
+    - **name**: Item name
+    - **price**: Must be positive
+    """
+    return item
+
+# Custom OpenAPI config
+app = FastAPI(
+    title="My API",
+    description="API description",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+```
+
+### 8. How to handle file uploads in FastAPI?
+
+**Answer:**
+
+```python
+from fastapi import UploadFile, File
+
+@app.post("/upload/")
+async def upload_file(file: UploadFile = File(...)):
+    contents = await file.read()
+    return {"filename": file.filename, "size": len(contents)}
+
+# Multiple files
+@app.post("/upload-multiple/")
+async def upload_files(files: list[UploadFile] = File(...)):
+    return [{"filename": f.filename} for f in files]
+
+# With validation
+@app.post("/upload-image/")
+async def upload_image(
+    file: UploadFile = File(..., description="Image file")
+):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(400, "File must be an image")
+    return {"filename": file.filename}
+```
+
+### 9. What is Pydantic and how does FastAPI use it?
+
+**Answer:**
+
+```python
+from pydantic import BaseModel, EmailStr, Field, validator
+
+class User(BaseModel):
+    id: int
+    email: EmailStr
+    name: str = Field(..., min_length=2, max_length=50)
+    age: int = Field(ge=0, le=150)
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if '@' not in v:
+            raise ValueError('Invalid email')
+        return v
+    
+    class Config:
+        orm_mode = True  # SQLAlchemy compatibility
+
+# Nested models
+class Post(BaseModel):
+    author: User
+    content: str
+```
+
+### 10. How to test FastAPI applications?
+
+**Answer:**
+
+```python
+from fastapi.testclient import TestClient
+from app import app
+
+client = TestClient(app)
+
+def test_read_main():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Hello"}
+
+def test_create_user():
+    response = client.post("/users/", json={
+        "email": "test@example.com",
+        "password": "secret"
+    })
+    assert response.status_code == 201
+    assert "id" in response.json()
+
+# Async tests with pytest
+import pytest
+
+@pytest.mark.asyncio
+async def test_async_endpoint():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.get("/async-endpoint")
+        assert response.status_code == 200
+```
+
 ---
 
 ## Actix
@@ -1311,6 +3026,126 @@ async fn main() -> std::io::Result<()> {
     .run()
     .await
 }
+```
+
+### 4. How to handle JSON in Actix-web?
+
+**Answer:**
+
+```rust
+use actix_web::{post, web, Responder};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+struct Item {
+    name: String,
+    price: f64,
+}
+
+#[derive(Serialize)]
+struct ItemResponse {
+    id: u32,
+    name: String,
+}
+
+#[post("/items")]
+async fn create_item(item: web::Json<Item>) -> impl Responder {
+    let response = ItemResponse {
+        id: 1,
+        name: item.name.clone(),
+    };
+    web::Json(response)
+}
+```
+
+### 5. How to implement middleware in Actix-web?
+
+**Answer:**
+
+```rust
+use actix_web::{dev, Error, FromRequest, HttpRequest};
+use actix_web::middleware::Logger;
+
+// Built-in logger
+App::new().wrap(Logger::default());
+
+// Custom middleware
+use futures_util::future::LocalBoxFuture;
+
+pub struct Authentication;
+
+impl<S, B> Transform<S, actix_web::dev::ServerRequest> for Authentication
+where
+    S: Service<actix_web::dev::ServerRequest, Response = ServiceResponse<B>, Error = Error>,
+    S::Future: 'static,
+    B: 'static,
+{
+    type Response = ServiceResponse<B>;
+    type Error = Error;
+    type Transform = AuthenticationMiddleware<S>;
+    type InitError = ();
+    type Future = LocalBoxFuture<'static, Result<Self::Transform, Self::InitError>>;
+
+    fn new_transform(&self, service: S) -> Self::Future {
+        Box::pin(async move { Ok(AuthenticationMiddleware { service }) })
+    }
+}
+```
+
+### 6. How to handle database connections in Actix-web?
+
+**Answer:**
+
+```rust
+use sqlx::{Pool, Postgres};
+use actix_web::web;
+
+// Database pool as app state
+struct AppState {
+    db: Pool<Postgres>,
+}
+
+async fn index(data: web::Data<AppState>) -> impl Responder {
+    let users = sqlx::query!("SELECT * FROM users")
+        .fetch_all(&data.db)
+        .await
+        .unwrap();
+    web::Json(users)
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    let pool = Pool::new("postgres://user:pass@localhost/db").await.unwrap();
+    
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            .service(index)
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
+}
+```
+
+### 7. How to handle CORS in Actix-web?
+
+**Answer:**
+
+```rust
+use actix_cors::Cors;
+
+HttpServer::new(|| {
+    let cors = Cors::default()
+        .allow_any_origin()
+        .allow_any_method()
+        .allow_any_header()
+        .max_age(3600);
+    
+    App::new()
+        .wrap(cors)
+        .service(index)
+})
 ```
 
 ---
@@ -1392,6 +3227,197 @@ const resolvers = {
 ### 5. What is schema stitching / federation?
 
 **Answer:** Combining multiple GraphQL schemas into one.
+
+### 6. How to implement subscriptions in GraphQL?
+
+**Answer:**
+
+```javascript
+// Schema
+type Subscription {
+  messageAdded(roomId: ID!): Message!
+}
+
+// Resolver
+const resolvers = {
+  Subscription: {
+    messageAdded: {
+      subscribe: (_, { roomId }, { pubsub }) => {
+        return pubsub.asyncIterator(['MESSAGE_' + roomId]);
+      },
+    },
+  },
+};
+
+// Publishing
+pubsub.publish('MESSAGE_' + roomId, {
+  messageAdded: newMessage,
+});
+```
+
+### 7. What is DataLoader and why use it?
+
+**Answer:** Batching and caching for N+1 problem.
+
+```javascript
+const DataLoader = require('dataloader');
+
+const userLoader = new DataLoader(async (userIds) => {
+  const users = await db.user.findMany({
+    where: { id: { in: userIds } },
+  });
+  return userIds.map(id => users.find(u => u.id === id));
+});
+
+// In resolver - batches multiple calls
+const user = await userLoader.load(userId);
+```
+
+### 8. Explain GraphQL directives.
+
+**Answer:**
+
+```graphql
+# Built-in directives
+query {
+  user @include(if: $showUser) {
+    id
+    name
+  }
+  posts @skip(if: $skipPosts) {
+    title
+  }
+}
+
+# Custom directive
+directive @auth(requires: Role) on FIELD_DEFINITION
+
+type Query {
+  adminData: String @auth(requires: ADMIN)
+}
+
+# Schema directive implementation
+class AuthDirective extends SchemaDirectiveVisitor {
+  visitFieldDefinition(field) {
+    const { requires } = this.args;
+    // Add auth logic
+  }
+}
+```
+
+### 9. How to handle file uploads in GraphQL?
+
+**Answer:**
+
+```javascript
+// Using graphql-upload
+import { GraphQLUpload } from 'graphql-upload';
+
+const schema = makeExecutableSchema({
+  typeDefs: gql`
+    scalar Upload
+    type Mutation {
+      uploadFile(file: Upload!): File!
+    }
+  `,
+  resolvers: {
+    Upload: GraphQLUpload,
+    Mutation: {
+      uploadFile: async (_, { file }) => {
+        const { createReadStream, filename } = await file;
+        const stream = createReadStream();
+        // Process stream
+        return { filename, url: '/uploads/' + filename };
+      },
+    },
+  },
+});
+```
+
+### 10. What is Apollo Federation?
+
+**Answer:** Distributed GraphQL architecture.
+
+```javascript
+// Service 1 - Users
+const typeDefs = gql`
+  extend type Query {
+    me: User
+  }
+  type User @key(fields: "id") {
+    id: ID!
+    name: String
+  }
+`;
+
+// Service 2 - Posts
+const typeDefs = gql`
+  type Post @key(fields: "id") {
+    id: ID!
+    author: User @external
+  }
+  extend type User @key(fields: "id") {
+    id: ID! @external
+    posts: [Post]
+  }
+`;
+
+// Gateway combines services
+```
+
+### 11. How to version GraphQL APIs?
+
+**Answer:**
+
+```graphql
+# GraphQL doesn't need versioning like REST
+# Add new fields without breaking existing queries
+
+type Query {
+  users: [User]
+  usersV2(first: Int, after: String): UserConnection # New paginated version
+}
+
+# Deprecate old fields
+type User {
+  name: String @deprecated(reason: "Use fullName instead")
+  fullName: String
+}
+
+# Use schema evolution
+```
+
+### 12. Explain GraphQL caching strategies.
+
+**Answer:**
+
+```javascript
+// Client-side caching (Apollo Client)
+const client = new ApolloClient({
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          posts: {
+            keyArgs: [],
+            merge(existing, incoming) {
+              return incoming;
+            },
+          },
+        },
+      },
+    },
+  }),
+});
+
+// Server-side caching
+// - Query result caching
+// - DataLoader caching
+// - CDN caching for persisted queries
+
+// HTTP caching with cache-control
+res.set('Cache-Control', 'max-age=60, public');
+```
 
 ---
 
@@ -1485,6 +3511,158 @@ SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 
 **Answer:** Multi-Version Concurrency Control allows readers and writers to access data simultaneously without blocking.
 
+### 7. Explain PostgreSQL replication.
+
+**Answer:**
+
+```sql
+-- Primary configuration
+# postgresql.conf
+wal_level = replica
+max_wal_senders = 3
+wal_keep_size = 64
+
+# pg_hba.conf
+host replication replicator 192.168.1.0/24 md5
+
+-- Replica configuration
+# standby.signal file
+primary_conninfo = 'host=primary_host user=replicator password=secret'
+```
+
+**Types:**
+- **Streaming replication**: Real-time sync
+- **Logical replication**: Row-level sync between different schemas
+
+### 8. What are PostgreSQL window functions?
+
+**Answer:**
+
+```sql
+-- ROW_NUMBER, RANK, DENSE_RANK
+SELECT 
+  name,
+  salary,
+  ROW_NUMBER() OVER (ORDER BY salary DESC) as row_num,
+  RANK() OVER (ORDER BY salary DESC) as rank,
+  DENSE_RANK() OVER (ORDER BY salary DESC) as dense_rank
+FROM employees;
+
+-- LAG, LEAD
+SELECT 
+  date,
+  revenue,
+  LAG(revenue, 1) OVER (ORDER BY date) as prev_revenue,
+  LEAD(revenue, 1) OVER (ORDER BY date) as next_revenue
+FROM sales;
+
+-- Running totals
+SELECT 
+  date,
+  SUM(revenue) OVER (ORDER BY date) as running_total
+FROM sales;
+```
+
+### 9. How to optimize PostgreSQL queries?
+
+**Answer:**
+
+```sql
+-- Use EXPLAIN ANALYZE
+EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'test@example.com';
+
+-- Index optimization
+CREATE INDEX CONCURRENTLY idx_email ON users(email);
+
+-- Vacuum and analyze
+VACUUM ANALYZE users;
+
+-- Connection pooling (pgbouncer)
+-- Partitioning for large tables
+CREATE TABLE measurements (
+  city_id int,
+  logdate date,
+  peaktemp int,
+  unitsales int
+) PARTITION BY RANGE (logdate);
+
+-- Materialized views for complex queries
+CREATE MATERIALIZED VIEW sales_summary AS
+SELECT date_trunc('month', date), SUM(amount)
+FROM sales GROUP BY 1;
+
+REFRESH MATERIALIZED VIEW CONCURRENTLY sales_summary;
+```
+
+### 10. What are PostgreSQL triggers?
+
+**Answer:**
+
+```sql
+-- Create trigger function
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.modified_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger
+CREATE TRIGGER update_users_modified
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_modified_column();
+
+-- Audit trigger
+CREATE TABLE audit_log (
+  table_name TEXT,
+  operation TEXT,
+  old_data JSONB,
+  new_data JSONB,
+  changed_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 11. Explain PostgreSQL full-text search.
+
+**Answer:**
+
+```sql
+-- Basic full-text search
+SELECT * FROM articles
+WHERE to_tsvector('english', content) @@ to_tsquery('english', 'database');
+
+-- Create index for performance
+CREATE INDEX idx_fts ON articles USING GIN (to_tsvector('english', content));
+
+-- Use tsvector column
+ALTER TABLE articles ADD COLUMN search_vector tsvector;
+UPDATE articles SET search_vector = to_tsvector('english', content);
+CREATE INDEX idx_search ON articles USING GIN (search_vector);
+
+-- Ranking
+SELECT 
+  title,
+  ts_rank(search_vector, query) as rank
+FROM articles, to_tsquery('database') query
+WHERE search_vector @@ query
+ORDER BY rank DESC;
+```
+
+### 12. What is the difference between VACUUM and ANALYZE?
+
+**Answer:**
+- `VACUUM`: Reclaims storage from dead tuples
+- `ANALYZE`: Updates statistics for query planner
+
+```sql
+VACUUM; -- Reclaim space
+VACUUM FULL; -- Aggressive, locks table
+ANALYZE; -- Update statistics
+VACUUM ANALYZE; -- Both combined
+```
+
 ---
 
 ## MongoDB
@@ -1548,6 +3726,119 @@ db.orders.aggregate([
 - **Shard**: Stores subset of data
 - **Mongos**: Query router
 - **Config servers**: Store metadata
+
+### 6. What is the difference between embedded and referenced documents?
+
+**Answer:**
+
+```javascript
+// Embedded (denormalized) - good for read-heavy, one-to-few
+{
+  _id: 1,
+  name: "John",
+  addresses: [
+    { street: "123 Main", city: "NYC" },
+    { street: "456 Oak", city: "LA" }
+  ]
+}
+
+// Referenced (normalized) - good for many-to-many, large collections
+{
+  _id: 1,
+  name: "John",
+  addressIds: [ObjectId("..."), ObjectId("...")]
+}
+```
+
+### 7. How to handle transactions in MongoDB?
+
+**Answer:**
+
+```javascript
+const session = await db.startSession();
+session.startTransaction();
+
+try {
+  await db.accounts.updateOne(
+    { _id: 1 },
+    { $inc: { balance: -100 } },
+    { session }
+  );
+  await db.accounts.updateOne(
+    { _id: 2 },
+    { $inc: { balance: 100 } },
+    { session }
+  );
+  await session.commitTransaction();
+} catch (error) {
+  await session.abortTransaction();
+  throw error;
+} finally {
+  session.endSession();
+}
+```
+
+### 8. Explain MongoDB indexes types.
+
+**Answer:**
+
+```javascript
+// Single field
+db.users.createIndex({ email: 1 });
+
+// Compound
+db.users.createIndex({ lastName: 1, firstName: 1 });
+
+// Multikey (arrays)
+db.users.createIndex({ tags: 1 });
+
+// Text index
+db.articles.createIndex({ content: "text" });
+
+// Geospatial
+db.places.createIndex({ location: "2dsphere" });
+
+// Hashed (for sharding)
+db.logs.createIndex({ timestamp: "hashed" });
+
+// TTL (auto-expire)
+db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 });
+
+// Partial index
+db.users.createIndex(
+  { email: 1 },
+  { partialFilterExpression: { active: true } }
+);
+```
+
+### 9. How to backup and restore MongoDB?
+
+**Answer:**
+
+```bash
+# Backup (mongodump)
+mongodump --uri="mongodb://localhost:27017/mydb" --out=/backup
+
+# Restore (mongorestore)
+mongorestore --uri="mongodb://localhost:27017/mydb" /backup/mydb
+
+# Export to JSON/BSON
+mongoexport --db=mydb --collection=users --out=users.json
+
+# Import
+mongoimport --db=mydb --collection=users --file=users.json
+```
+
+### 10. What is MongoDB Atlas?
+
+**Answer:** Managed MongoDB cloud service.
+
+**Features:**
+- Automated backups
+- Auto-scaling
+- Global clusters
+- Built-in monitoring
+- Serverless instances
 
 ---
 
@@ -1613,6 +3904,100 @@ def is_rate_limited(user_id, limit=100, window=3600):
     return current > limit
 ```
 
+### 6. What are Redis sorted sets use cases?
+
+**Answer:**
+
+```python
+# Leaderboards
+r.zadd("leaderboard", {"player1": 1000, "player2": 500})
+r.zrevrank("leaderboard", "player1")  # Rank
+r.zrevrange("leaderboard", 0, 9, withscores=True)  # Top 10
+
+# Priority queues
+r.zadd("tasks", {"task1": 1, "task2": 5})  # Score = priority
+task = r.zpopmin("tasks")  # Get highest priority
+
+# Rate limiting with sliding window
+r.zadd("rate:user1", {str(time.time()): time.time()})
+r.zremrangebyscore("rate:user1", 0, time.time() - 60)
+count = r.zcard("rate:user1")
+```
+
+### 7. Explain Redis pub/sub.
+
+**Answer:**
+
+```python
+# Publisher
+r.publish("channel", "message")
+
+# Subscriber
+pubsub = r.pubsub()
+pubsub.subscribe("channel")
+pubsub.subscribe("user:123:*")  # Pattern
+
+for message in pubsub.listen():
+    print(message)
+
+# Redis Streams (more robust than pub/sub)
+r.xadd("mystream", {"field": "value"})
+r.xread({"mystream": "0"}, count=1, block=1000)
+```
+
+### 8. How to use Redis for session management?
+
+**Answer:**
+
+```python
+# Create session
+session_id = str(uuid.uuid4())
+r.setex(f"session:{session_id}", 3600, json.dumps(user_data))
+
+# Get session
+data = r.get(f"session:{session_id}")
+if data:
+    user = json.loads(data)
+
+# Extend session
+r.expire(f"session:{session_id}", 3600)
+
+# Delete session (logout)
+r.delete(f"session:{session_id}")
+```
+
+### 9. What is Redis Cluster?
+
+**Answer:** Horizontal scaling with automatic sharding.
+
+```bash
+# Create cluster
+redis-cli --cluster create 127.0.0.1:7000 127.0.0.1:7001 127.0.0.1:7002 \
+  127.0.0.1:7003 127.0.0.1:7004 127.0.0.1:7005 --cluster-replicas 1
+
+# 16384 hash slots distributed across nodes
+# Slot = CRC16(key) % 16384
+```
+
+### 10. What are Redis Lua scripts?
+
+**Answer:** Atomic operations.
+
+```python
+# Register script
+script = """
+if redis.call('get', KEYS[1]) == ARGV[1] then
+  return redis.call('del', KEYS[1])
+else
+  return 0
+end
+"""
+unlock = r.register_script(script)
+unlock(keys=['lock'], args=['token'])
+
+# Use for complex atomic operations
+```
+
 ---
 
 ## Elasticsearch
@@ -1660,6 +4045,131 @@ GET /products/_search
 
 **Answer:** BM25 algorithm based on term frequency, inverse document frequency.
 
+### 5. How to design Elasticsearch mappings?
+
+**Answer:**
+
+```json
+PUT /products
+{
+  "mappings": {
+    "properties": {
+      "name": { 
+        "type": "text",
+        "fields": { "keyword": { "type": "keyword" } }
+      },
+      "price": { "type": "float" },
+      "created_at": { "type": "date" },
+      "description": { "type": "text", "analyzer": "standard" },
+      "category": { "type": "keyword" },
+      "location": { "type": "geo_point" }
+    }
+  }
+}
+```
+
+### 6. Explain Elasticsearch analyzers.
+
+**Answer:**
+
+```json
+PUT /my-index
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "custom_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "stop", "snowball"]
+        }
+      }
+    }
+  }
+}
+
+// Built-in analyzers:
+// - standard: Default, removes punctuation
+// - simple: Lowercase, splits on non-letters
+// - whitespace: Splits on whitespace
+// - keyword: No analysis
+// - language-specific: english, french, etc.
+```
+
+### 7. How to handle aggregations in Elasticsearch?
+
+**Answer:**
+
+```json
+GET /sales/_search
+{
+  "size": 0,
+  "aggs": {
+    "by_category": {
+      "terms": { "field": "category" },
+      "aggs": {
+        "avg_price": { "avg": { "field": "price" } },
+        "total_sales": { "sum": { "field": "amount" } }
+      }
+    },
+    "date_histogram": {
+      "date_histogram": { "field": "date", "calendar_interval": "month" }
+    },
+    "price_range": {
+      "range": { "field": "price", "ranges": [{ "to": 50 }, { "from": 50, "to": 100 }, { "from": 100 }] }
+    }
+  }
+}
+```
+
+### 8. What is the difference between query and filter context?
+
+**Answer:**
+
+```json
+// Query context - calculates score
+{
+  "query": {
+    "match": { "title": "laptop" }
+  }
+}
+
+// Filter context - binary match, cached, no scoring
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "range": { "price": { "gte": 500 } } },
+        { "term": { "active": true } }
+      ]
+    }
+  }
+}
+```
+
+### 9. How to scale Elasticsearch?
+
+**Answer:**
+
+- **Sharding**: Split index into multiple shards
+- **Replication**: Add replica shards for read scaling and HA
+- **Index lifecycle**: Hot-warm-cold architecture
+- **Rollup indices**: Pre-aggregated data for historical queries
+
+```json
+PUT /_ilm/policy/my_policy
+{
+  "policy": {
+    "phases": {
+      "hot": { "actions": { "rollover": { "max_size": "50GB" } } },
+      "warm": { "min_age": "7d", "actions": { "shrink": { "number_of_shards": 1 } } },
+      "cold": { "min_age": "30d", "actions": { "freeze": {} } },
+      "delete": { "min_age": "90d", "actions": { "delete": {} } }
+    }
+  }
+}
+```
+
 ---
 
 ## Kafka
@@ -1698,6 +4208,91 @@ props.put("isolation.level", "read_committed");
 **Answer:**
 - Messages ordered within partition
 - Use same key for related messages (goes to same partition)
+
+### 5. What is Kafka Connect?
+
+**Answer:** Framework for connecting Kafka to external systems.
+
+```json
+// Source connector - import data
+{
+  "name": "jdbc-source",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+    "connection.url": "jdbc:postgresql://localhost:5432/db",
+    "topic.prefix": "pg-",
+    "mode": "incrementing",
+    "incrementing.column.name": "id"
+  }
+}
+
+// Sink connector - export data
+{
+  "name": "s3-sink",
+  "config": {
+    "connector.class": "io.confluent.connect.s3.S3SinkConnector",
+    "topics": "my-topic",
+    "s3.bucket.name": "my-bucket",
+    "format.class": "io.confluent.connect.s3.format.json.JsonFormat"
+  }
+}
+```
+
+### 6. Explain Kafka Streams.
+
+**Answer:** Library for stream processing.
+
+```java
+KStream<String, String> stream = builder.stream("input-topic");
+
+// Transform
+stream.mapValues(value -> value.toUpperCase())
+      .filter((key, value) -> value.length() > 3)
+      .to("output-topic");
+
+// Aggregation
+KTable<String, Long> counts = stream
+    .groupBy((key, value) -> value)
+    .count();
+
+// Join
+KStream<String, String> joined = stream.join(otherStream, 
+    (value1, value2) -> value1 + " " + value2,
+    JoinWindows.of(Duration.ofMinutes(5))
+);
+```
+
+### 7. How to handle schema evolution in Kafka?
+
+**Answer:** Using Schema Registry.
+
+```java
+// Avro schema
+{
+  "type": "record",
+  "name": "User",
+  "fields": [
+    {"name": "id", "type": "int"},
+    {"name": "name", "type": "string"},
+    {"name": "email", "type": ["null", "string"], "default": null}
+  ]
+}
+
+// Compatibility modes:
+// - BACKWARD: New schema can read old data
+// - FORWARD: Old schema can read new data
+// - FULL: Both backward and forward compatible
+```
+
+### 8. What is Kafka consumer rebalancing?
+
+**Answer:** Redistributing partitions when consumers join/leave.
+
+**Strategies:**
+- `RangeAssignor`: Assigns contiguous ranges
+- `RoundRobinAssignor`: Distributes evenly
+- `StickyAssignor`: Minimizes partition movement
+- `CooperativeStickyAssignor`: Incremental rebalancing
 
 ---
 
@@ -1797,6 +4392,247 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('all-MiniLM-L6-v2')
 embedding = model.encode("Hello world")
 print(embedding.shape)  # (384,)
+```
+
+### 7. What is the difference between fine-tuning and RAG?
+
+**Answer:**
+
+| Fine-tuning | RAG |
+|-------------|-----|
+| Updates model weights | Keeps model frozen |
+| Expensive, requires GPU | Cheaper, faster to implement |
+| Good for style/domain adaptation | Good for factual knowledge |
+| Static knowledge | Dynamic, updatable knowledge |
+| Risk of hallucination | Grounded in retrieved docs |
+
+### 8. How to evaluate LLM applications?
+
+**Answer:**
+
+```python
+# Metrics to track
+# 1. Relevance - Does output match intent?
+# 2. Faithfulness - Is output grounded in context?
+# 3. Answer relevance - Is answer direct and clear?
+# 4. Context precision - Is relevant info ranked high?
+
+# Using RAGAS
+from ragas import evaluate
+from ragas.metrics import faithfulness, answer_relevance
+
+results = evaluate(
+    dataset,
+    metrics=[faithfulness, answer_relevance]
+)
+
+# Human evaluation
+# A/B testing, preference ranking
+```
+
+### 9. What are vector databases?
+
+**Answer:** Databases optimized for similarity search.
+
+```python
+# Pinecone
+import pinecone
+pinecone.init(api_key="key", environment="env")
+index = pinecone.Index("my-index")
+index.upsert([("id1", embedding, {"metadata": "value"})])
+results = index.query(embedding, top_k=5)
+
+# ChromaDB
+import chromadb
+client = chromadb.Client()
+collection = client.create_collection("docs")
+collection.add(embeddings=[emb], documents=["doc"], ids=["1"])
+results = collection.query(query_embeddings=[emb], n_results=5)
+
+# FAISS (Facebook AI Similarity Search)
+import faiss
+index = faiss.IndexFlatL2(384)
+index.add(embeddings)
+distances, indices = index.search(query_embedding, k=5)
+```
+
+### 10. Explain LangChain components.
+
+**Answer:**
+
+```python
+# Prompts
+from langchain.prompts import PromptTemplate
+prompt = PromptTemplate.from_template("Summarize: {text}")
+
+# Models
+from langchain.chat_models import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4", temperature=0.7)
+
+# Chains
+from langchain.chains import LLMChain
+chain = LLMChain(llm=llm, prompt=prompt)
+
+# Memory
+from langchain.memory import ConversationBufferMemory
+memory = ConversationBufferMemory()
+
+# Agents
+from langchain.agents import initialize_agent, Tool
+tools = [Tool(...)]
+agent = initialize_agent(tools, llm, agent="zero-shot-react-description")
+
+# Document loaders
+from langchain.document_loaders import PyPDFLoader
+loader = PyPDFLoader("file.pdf")
+docs = loader.load()
+
+# Text splitters
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
+chunks = splitter.split_documents(docs)
+```
+
+### 11. What is LangGraph?
+
+**Answer:** Build stateful, multi-actor applications with cycles.
+
+```python
+from langgraph.graph import StateGraph, END
+
+# Define state
+class State(TypedDict):
+    messages: list
+    current_step: str
+
+# Create graph
+workflow = StateGraph(State)
+
+# Add nodes
+workflow.add_node("research", research_node)
+workflow.add_node("analyze", analyze_node)
+workflow.add_node("write", write_node)
+
+# Add edges
+workflow.set_entry_point("research")
+workflow.add_edge("research", "analyze")
+workflow.add_conditional_edges(
+    "analyze",
+    lambda x: "write" if x["complete"] else "research",
+)
+workflow.add_edge("write", END)
+
+app = workflow.compile()
+result = app.invoke({"messages": [], "current_step": ""})
+```
+
+### 12. How to handle token limits in LLMs?
+
+**Answer:**
+
+```python
+# 1. Chunking
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+splitter = RecursiveCharacterTextSplitter(chunk_size=4000, chunk_overlap=200)
+
+# 2. Map-reduce
+from langchain.chains import MapReduceDocumentsChain
+# Process chunks in parallel, then combine
+
+# 3. Refine
+# Iterate through chunks, refining answer each time
+
+# 4. Map-rerank
+# Process all chunks, return highest scored answer
+
+# 5. Sliding window
+# Keep only recent context in conversation
+
+# 6. Summary buffer
+from langchain.memory import ConversationSummaryBufferMemory
+memory = ConversationSummaryBufferMemory(llm=llm, max_token_limit=2000)
+```
+
+### 13. What are AI agents and how do they work?
+
+**Answer:**
+
+```python
+# ReAct agent (Reason + Act)
+from langchain.agents import AgentType, initialize_agent
+
+agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
+
+# Custom agent with tools
+tools = [
+    SearchTool(),  # Web search
+    CalculatorTool(),
+    PythonREPLTool(),
+    SqlDatabaseToolkit(db),
+]
+
+# Agent with memory
+from langchain.memory import ConversationBufferMemory
+memory = ConversationBufferMemory(memory_key="chat_history")
+agent = initialize_agent(tools, llm, memory=memory)
+
+# Plan-and-execute
+from langchain.experimental import PlanAndExecute
+agent = PlanAndExecute.from_llm_and_tools(llm, tools)
+```
+
+### 14. How to deploy LLM applications?
+
+**Answer:**
+
+```python
+# FastAPI + Uvicorn
+from fastapi import FastAPI
+app = FastAPI()
+
+@app.post("/generate")
+async def generate(prompt: str):
+    response = await llm.agenerate([prompt])
+    return {"response": response}
+
+# Run: uvicorn app:app --host 0.0.0.0 --port 8000
+
+# Docker deployment
+FROM python:3.11
+COPY . /app
+RUN pip install -r requirements.txt
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Serverless (AWS Lambda)
+# Use Lambda with API Gateway
+# Consider model size limits (250MB unzipped)
+
+# Model serving (vLLM, TGI)
+# docker run --gpus all ghcr.io/huggingface/text-generation-inference
+```
+
+### 15. What are common LLM security concerns?
+
+**Answer:**
+
+- **Prompt injection**: User manipulates prompt to bypass restrictions
+- **Data leakage**: Sensitive data in training or context
+- **Hallucination**: Model generates incorrect information
+- **Rate limiting**: Prevent abuse and control costs
+- **Output validation**: Sanitize model outputs
+
+```python
+# Mitigation strategies
+# 1. Input sanitization
+# 2. Output filtering
+# 3. System prompts with clear instructions
+# 4. Human-in-the-loop for sensitive operations
+# 5. Logging and monitoring
 ```
 
 ---
