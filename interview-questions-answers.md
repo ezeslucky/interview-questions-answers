@@ -4698,6 +4698,240 @@ Resources:
 - KMS (encryption)
 - CloudTrail (audit logging)
 
+### 6. Explain AWS Lambda cold starts.
+
+**Answer:** Delay when Lambda initializes a new container.
+
+**Mitigation:**
+- Provisioned concurrency
+- Keep functions warm with scheduled invocations
+- Reduce deployment package size
+- Use ARM64 (Graviton2) - faster initialization
+- Avoid large dependencies
+
+```python
+# Initialize outside handler for reuse
+import boto3
+dynamodb = boto3.resource('dynamodb')  # Initialized once
+
+def lambda_handler(event, context):
+    # Reuses existing connection
+    table = dynamodb.Table('my-table')
+    return table.scan()
+```
+
+### 7. What is AWS SQS and when to use it?
+
+**Answer:** Message queuing service for decoupling components.
+
+```python
+import boto3
+
+sqs = boto3.client('sqs')
+
+# Send message
+response = sqs.send_message(
+    QueueUrl=queue_url,
+    MessageBody=json.dumps({'task': 'process'}),
+    MessageGroupId='group1'  # For FIFO queues
+)
+
+# Receive messages
+response = sqs.receive_message(
+    QueueUrl=queue_url,
+    MaxNumberOfMessages=10,
+    WaitTimeSeconds=20  # Long polling
+)
+
+# Delete after processing
+sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=handle)
+```
+
+### 8. Explain AWS DynamoDB.
+
+**Answer:** NoSQL key-value/document database.
+
+```python
+import boto3
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('Users')
+
+# Put item
+table.put_item(Item={'userId': '123', 'name': 'John', 'age': 30})
+
+# Get item
+response = table.get_item(Key={'userId': '123'})
+
+# Query
+response = table.query(
+    KeyConditionExpression=Key('userId').eq('123'),
+    FilterExpression=Key('age').gt(18)
+)
+
+# Scan (avoid for large tables)
+response = table.scan(FilterExpression=Key('status').eq('active'))
+
+# Batch operations
+with table.batch_writer() as batch:
+    batch.put_item(Item={'userId': '1', 'name': 'A'})
+    batch.put_item(Item={'userId': '2', 'name': 'B'})
+```
+
+### 9. What is AWS CloudWatch?
+
+**Answer:** Monitoring and observability service.
+
+```python
+# Custom metrics
+cloudwatch = boto3.client('cloudwatch')
+cloudwatch.put_metric_data(
+    Namespace='MyApp',
+    MetricData=[{
+        'MetricName': 'ProcessingTime',
+        'Value': 1.25,
+        'Unit': 'Seconds'
+    }]
+)
+
+# Alarms
+# CPU > 80% for 5 minutes -> SNS notification
+# Custom metric thresholds
+# Log metric filters
+```
+
+### 10. Explain AWS ECS vs EKS vs Fargate.
+
+**Answer:**
+
+| Service | Description | Use Case |
+|---------|-------------|----------|
+| ECS | AWS container orchestration | AWS-native, simpler |
+| EKS | Managed Kubernetes | Multi-cloud, k8s expertise |
+| Fargate | Serverless containers | No infrastructure management |
+
+```yaml
+# ECS Task Definition
+{
+  "family": "my-app",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "containerDefinitions": [{
+    "name": "app",
+    "image": "my-app:latest",
+    "portMappings": [{"containerPort": 8080}]
+  }]
+}
+```
+
+### 11. What is AWS API Gateway?
+
+**Answer:** Managed API creation and management.
+
+```yaml
+# Serverless Framework
+functions:
+  api:
+    handler: handler.api
+    events:
+      - http:
+          path: /users
+          method: GET
+          cors: true
+      - http:
+          path: /users/{id}
+          method: GET
+          authorizer:
+            name: jwtAuth
+            type: TOKEN
+```
+
+**Features:** Rate limiting, authentication, request/response transformation, caching
+
+### 12. Explain AWS Step Functions.
+
+**Answer:** Orchestrate serverless workflows.
+
+```json
+{
+  "Comment": "Data Processing Workflow",
+  "StartAt": "Extract",
+  "States": {
+    "Extract": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account:function:extract",
+      "Next": "Transform"
+    },
+    "Transform": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account:function:transform",
+      "Next": "Load"
+    },
+    "Load": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account:function:load",
+      "End": true
+    }
+  }
+}
+```
+
+### 13. What is AWS EventBridge?
+
+**Answer:** Event bus for event-driven architectures.
+
+```python
+events = boto3.client('events')
+
+# Put rule
+events.put_rule(
+    Name='DailyReport',
+    ScheduleExpression='cron(0 8 * * ? *)',
+    State='ENABLED'
+)
+
+# Put target
+events.put_targets(
+    Rule='DailyReport',
+    Targets=[{
+        'Id': '1',
+        'Arn': 'arn:aws:lambda:region:account:function:generate-report'
+    }]
+)
+
+# Custom event bus for SaaS integrations
+```
+
+### 14. How to implement CI/CD on AWS?
+
+**Answer:**
+
+```yaml
+# AWS CodePipeline + CodeBuild
+# codebuild-buildspec.yml
+version: 0.2
+phases:
+  install:
+    commands:
+      - npm install
+  build:
+    commands:
+      - npm test
+      - npm run build
+  post_build:
+    commands:
+      - aws s3 sync ./dist s3://my-bucket/
+      - aws cloudfront create-invalidation --distribution-id $CF_ID --paths "/*"
+
+# Or use GitHub Actions with AWS OIDC
+- name: Configure AWS credentials
+  uses: aws-actions/configure-aws-credentials@v2
+  with:
+    role-to-assume: arn:aws:iam::123456789:role/github-role
+    aws-region: us-east-1
+```
+
 ---
 
 ## Docker & Kubernetes
@@ -4777,6 +5011,321 @@ spec:
 helm create mychart
 helm install myrelease ./mychart
 helm upgrade myrelease ./mychart
+helm rollback myrelease 1
+helm list
+```
+
+### 6. Explain Kubernetes networking.
+
+**Answer:**
+
+```yaml
+# ClusterIP - Internal service
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: myapp
+  ports:
+    - port: 80
+      targetPort: 8080
+  type: ClusterIP
+
+# NodePort - Expose on node IP
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30007
+
+# LoadBalancer - Cloud provider LB
+spec:
+  type: LoadBalancer
+
+# Ingress - HTTP/S routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+spec:
+  rules:
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+```
+
+### 7. What are Kubernetes ConfigMaps and Secrets?
+
+**Answer:**
+
+```yaml
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  DATABASE_URL: "postgres://localhost/db"
+  LOG_LEVEL: "info"
+
+# Secret (base64 encoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+type: Opaque
+data:
+  API_KEY: c2VjcmV0LWtleQ==  # echo -n "secret-key" | base64
+
+# Usage in Pod
+spec:
+  containers:
+    - envFrom:
+        - configMapRef:
+            name: app-config
+        - secretRef:
+            name: app-secret
+      env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secret
+              key: DB_PASSWORD
+```
+
+### 8. Explain Kubernetes storage.
+
+**Answer:**
+
+```yaml
+# PersistentVolume (PV)
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-data
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: standard
+  hostPath:
+    path: "/mnt/data"
+
+# PersistentVolumeClaim (PVC)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+
+# Usage in Pod
+spec:
+  containers:
+    - volumeMounts:
+        - mountPath: "/data"
+          name: data-volume
+  volumes:
+    - name: data-volume
+      persistentVolumeClaim:
+        claimName: pvc-data
+```
+
+### 9. What is a Kubernetes StatefulSet?
+
+**Answer:** For stateful applications with stable identities.
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql
+spec:
+  serviceName: "mysql"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+```
+
+### 10. How to handle Kubernetes autoscaling?
+
+**Answer:**
+
+```yaml
+# Horizontal Pod Autoscaler (HPA)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: myapp-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+# Vertical Pod Autoscaler (VPA)
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: myapp-vpa
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: myapp
+  updatePolicy:
+    updateMode: Auto
+
+# Cluster Autoscaler
+# Automatically adds/removes nodes based on pod pending state
+```
+
+### 11. What are Kubernetes operators?
+
+**Answer:** Custom controllers for managing complex applications.
+
+```yaml
+# Custom Resource Definition (CRD)
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: myapps.example.com
+spec:
+  group: example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+  names:
+    plural: myapps
+    singular: myapp
+    kind: MyApp
+
+# Operator watches CR and reconciles state
+```
+
+### 12. Explain Kubernetes security best practices.
+
+**Answer:**
+
+```yaml
+# ServiceAccount with limited permissions
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: app-sa
+
+# Role-based access control (RBAC)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+# Pod security context
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+    - securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+
+# Network Policies
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+```
+
+### 13. How to debug Kubernetes issues?
+
+**Answer:**
+
+```bash
+# Check pod status
+kubectl get pods
+kubectl describe pod <pod-name>
+
+# View logs
+kubectl logs <pod-name>
+kubectl logs <pod-name> -c <container-name>
+kubectl logs -f <pod-name>  # Follow
+
+# Execute commands in pod
+kubectl exec -it <pod-name> -- /bin/sh
+kubectl exec -it <pod-name> -- env
+
+# Port forwarding
+kubectl port-forward <pod-name> 8080:80
+
+# Check events
+kubectl get events --sort-by='.lastTimestamp'
+
+# Debug ephemeral containers
+kubectl debug -it <pod-name> --image=busybox
+
+# Check resource usage
+kubectl top pods
+kubectl top nodes
 ```
 
 ---
@@ -4862,6 +5411,151 @@ contract MyNFT is ERC721 {
 ```bash
 ganache-cli --port 8545
 ```
+
+### 7. Explain Ethereum Virtual Machine (EVM).
+
+**Answer:** Runtime environment for smart contracts.
+
+**Components:**
+- Stack machine (256-bit words)
+- Memory (volatile)
+- Storage (persistent)
+- Gas system (prevents infinite loops)
+
+### 8. What are ERC standards?
+
+**Answer:**
+
+```solidity
+// ERC-20 - Token standard
+interface IERC20 {
+    function totalSupply() external view returns (uint);
+    function balanceOf(address account) external view returns (uint);
+    function transfer(address to, uint amount) external returns (bool);
+    function approve(address spender, uint amount) external returns (bool);
+    function transferFrom(address from, address to, uint amount) external returns (bool);
+}
+
+// ERC-721 - NFT standard
+interface IERC721 {
+    function ownerOf(uint256 tokenId) external view returns (address);
+    function safeTransferFrom(address from, address to, uint256 tokenId) external;
+    function approve(address to, uint256 tokenId) external;
+}
+
+// ERC-1155 - Multi-token standard
+// ERC-4626 - Tokenized Vault standard
+```
+
+### 9. What is gas in Ethereum?
+
+**Answer:**
+
+```solidity
+// Gas costs
+// SLOAD: 2100 gas
+// SSTORE: 20000 gas (cold) / 2900 gas (warm)
+// CALL: 700 gas
+// CREATE: 32000 gas
+
+// Optimizing gas
+contract Optimized {
+    // Use calldata instead of memory for function args
+    function test(string calldata s) external {
+        // ...
+    }
+    
+    // Pack variables
+    uint128 a; // 16 bytes
+    uint128 b; // 16 bytes
+    uint256 c; // 32 bytes - packed together
+    
+    // Use events instead of storage
+    event Transfer(address indexed from, address indexed to, uint256 amount);
+}
+```
+
+### 10. What is Web3.js and ethers.js?
+
+**Answer:**
+
+```javascript
+// Web3.js
+const web3 = new Web3(window.ethereum);
+const accounts = await web3.eth.requestAccounts();
+const balance = await web3.eth.getBalance(address);
+const tx = await contract.methods.transfer(to, amount).send({ from: accounts[0] });
+
+// ethers.js (preferred)
+const provider = new ethers.BrowserProvider(window.ethereum);
+const signer = await provider.getSigner();
+const balance = await provider.getBalance(address);
+const contract = new ethers.Contract(address, abi, signer);
+const tx = await contract.transfer(to, amount);
+```
+
+### 11. What is IPFS and how does it work?
+
+**Answer:**
+
+```javascript
+// IPFS uses content-addressed storage
+// File content -> hash -> unique CID
+
+// Adding file
+const ipfs = window.IpfsHttpClient.create({ host: 'ipfs.infura.io', port: 5001 });
+const { path } = await ipfs.add(file);
+console.log(path); // QmHash...
+
+// Reading file
+const stream = ipfs.cat(cid);
+for await (const chunk of stream) {
+  // Process chunk
+}
+
+// IPNS - mutable content pointers
+await ipfs.name.publish(cid); // Publish to IPNS
+```
+
+### 12. Explain DeFi concepts.
+
+**Answer:**
+
+```solidity
+// AMM (Automated Market Maker)
+contract AMM {
+    function swap(uint amountIn, address tokenIn) external {
+        uint amountOut = getAmountOut(amountIn, tokenIn);
+        IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
+        IERC20(tokenOut).transfer(msg.sender, amountOut);
+    }
+}
+
+// Lending protocol
+// - Supply collateral
+// - Borrow against it
+// - Interest accrues over time
+
+// Flash loans
+// Borrow without collateral within single transaction
+// Must return funds + fee before transaction ends
+```
+
+### 13. What is the difference between Layer 1 and Layer 2?
+
+**Answer:**
+
+| Layer 1 | Layer 2 |
+|---------|---------|
+| Base blockchain (Ethereum) | Built on L1 |
+| High security | Lower security |
+| Slower, expensive | Faster, cheaper |
+| Full decentralization | Some trade-offs |
+| Examples: ETH, BTC | Examples: Optimism, Arbitrum, zkSync |
+
+**Rollups:**
+- **Optimistic**: Fraud proofs, challenge period
+- **ZK**: Validity proofs, instant finality
 
 ---
 
