@@ -5557,6 +5557,281 @@ contract AMM {
 - **Optimistic**: Fraud proofs, challenge period
 - **ZK**: Validity proofs, instant finality
 
+### 14. What are common smart contract security vulnerabilities?
+
+**Answer:**
+
+```solidity
+// 1. Reentrancy attack
+// VULNERABLE
+function withdraw() public {
+    uint bal = balances[msg.sender];
+    (bool success, ) = msg.sender.call{value: bal}("");
+    balances[msg.sender] = 0;
+}
+
+// FIX: Checks-Effects-Interactions
+function withdraw() public {
+    uint bal = balances[msg.sender];
+    balances[msg.sender] = 0; // State first
+    (bool success, ) = msg.sender.call{value: bal}("");
+}
+
+// 2. Integer overflow (Solidity < 0.8.0)
+// FIX: Use SafeMath or Solidity 0.8+
+
+// 3. Access control
+// FIX: Add onlyOwner modifier
+modifier onlyOwner() {
+    require(msg.sender == owner, "Not owner");
+    _;
+}
+```
+
+### 15. How to test smart contracts?
+
+**Answer:**
+
+```javascript
+// Hardhat test
+const { expect } = require("chai");
+
+describe("Token", function() {
+  let token, owner, addr1;
+
+  beforeEach(async function() {
+    const Token = await ethers.getContractFactory("Token");
+    token = await Token.deploy();
+    [owner, addr1] = await ethers.getSigners();
+  });
+
+  it("Should transfer tokens", async function() {
+    await token.transfer(addr1.address, 100);
+    expect(await token.balanceOf(addr1.address)).to.equal(100);
+  });
+
+  it("Should fail for insufficient balance", async function() {
+    await expect(
+      token.connect(addr1).transfer(owner.address, 100)
+    ).to.be.revertedWith("Insufficient balance");
+  });
+});
+
+// Run: npx hardhat test
+// Coverage: npx hardhat coverage
+```
+
+### 16. What is a DAO?
+
+**Answer:** Decentralized Autonomous Organization - community-governed protocol.
+
+```solidity
+contract SimpleDAO {
+    struct Proposal {
+        string description;
+        uint256 votesFor;
+        uint256 votesAgainst;
+        uint256 deadline;
+        bool executed;
+    }
+    
+    mapping(uint256 => Proposal) public proposals;
+    mapping(address => uint256) public votingPower;
+    uint256 public proposalCount;
+    
+    function propose(string memory desc, uint256 period) external {
+        proposalCount++;
+        proposals[proposalCount] = Proposal(desc, 0, 0, block.timestamp + period, false);
+    }
+    
+    function vote(uint256 id, bool support) external {
+        Proposal storage p = proposals[id];
+        require(block.timestamp < p.deadline, "Ended");
+        if (support) p.votesFor += votingPower[msg.sender];
+        else p.votesAgainst += votingPower[msg.sender];
+    }
+    
+    function execute(uint256 id) external {
+        Proposal storage p = proposals[id];
+        require(block.timestamp >= p.deadline && !p.executed);
+        require(p.votesFor > p.votesAgainst);
+        p.executed = true;
+        // Execute proposal logic
+    }
+}
+```
+
+### 17. How to deploy a smart contract?
+
+**Answer:**
+
+```javascript
+// Hardhat deploy script
+async function main() {
+  const Token = await ethers.getContractFactory("Token");
+  const token = await Token.deploy("MyToken", "MTK", 1000000);
+  await token.waitForDeployment();
+  console.log("Deployed to:", await token.getAddress());
+}
+
+// Verify on Etherscan
+// npx hardhat verify --network mainnet ADDRESS "MyToken" "MTK" 1000000
+```
+
+### 18. What is a multisig wallet?
+
+**Answer:** Wallet requiring multiple signatures.
+
+```solidity
+contract MultiSig {
+    address[] public owners;
+    mapping(address => bool) public isOwner;
+    uint256 public required;
+    
+    struct Tx { address to; uint256 value; bytes data; bool executed; }
+    Tx[] public transactions;
+    mapping(uint256 => mapping(address => bool)) public confirmed;
+    
+    constructor(address[] memory _owners, uint256 _required) {
+        for (uint i = 0; i < _owners.length; i++) isOwner[_owners[i]] = true;
+        owners = _owners;
+        required = _required;
+    }
+    
+    function submit(address to, uint256 value, bytes memory data) external {
+        transactions.push(Tx(to, value, data, false));
+    }
+    
+    function confirm(uint256 txId) external {
+        require(isOwner[msg.sender]);
+        confirmed[txId][msg.sender] = true;
+    }
+    
+    function execute(uint256 txId) external {
+        // Check confirmations >= required, then execute
+        Tx storage tx = transactions[txId];
+        tx.executed = true;
+        (bool ok, ) = tx.to.call{value: tx.value}(tx.data);
+        require(ok);
+    }
+}
+```
+
+### 19. What is a token bridge?
+
+**Answer:** Transfer tokens between blockchains.
+
+**Flow:**
+1. Lock tokens on source chain
+2. Emit event with proof
+3. Relayer submits proof to destination
+4. Mint/burn tokens on destination
+
+### 20. Explain upgradeable smart contracts.
+
+**Answer:**
+
+```solidity
+// Proxy pattern
+contract Proxy {
+    address public implementation;
+    
+    fallback() external {
+        assembly {
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize())
+            let result := delegatecall(gas(), sload(implementation.slot), ptr, calldatasize(), 0, 0)
+            returndatacopy(ptr, 0, returndatasize())
+            switch result case 0 { revert(ptr, returndatasize()) } default { return(ptr, returndatasize()) }
+        }
+    }
+}
+
+// Use OpenZeppelin Upgrades plugin
+// npx hardhat upgrade
+```
+
+### 21. How to get randomness on-chain?
+
+**Answer:** Use Chainlink VRF.
+
+```solidity
+import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+
+contract Random is VRFConsumerBaseV2 {
+    mapping(uint256 => uint256) public randomValues;
+    
+    function requestRandom() external returns (uint256) {
+        return COORDINATOR.requestRandomWords(keyHash, subId, 3, 100000, 1);
+    }
+    
+    function fulfillRandomWords(uint256 reqId, uint256[] memory words) internal override {
+        randomValues[reqId] = words[0];
+    }
+}
+```
+
+### 22. What is a Merkle tree used for?
+
+**Answer:** Efficient proof of membership.
+
+**Uses:**
+- Airdrop verification
+- Whitelist proofs
+- Balance proofs
+
+```javascript
+// Generate proof
+const tree = new MerkleTree(leaves, keccak256);
+const proof = tree.getProof(leaf);
+
+// Verify on-chain
+function verify(bytes32[] calldata proof, bytes32 leaf, bytes32 root) pure returns (bool) {
+    bytes32 hash = leaf;
+    for (uint i = 0; i < proof.length; i++) {
+        hash = proof[i] < hash ? keccak256(abi.encodePacked(proof[i], hash)) : keccak256(abi.encodePacked(hash, proof[i]));
+    }
+    return hash == root;
+}
+```
+
+### 23. What is front-running?
+
+**Answer:** Exploiting transaction ordering for profit.
+
+**Mitigations:**
+- Commit-reveal schemes
+- Private transactions (Flashbots)
+- Batch auctions
+
+### 24. What is a flash loan?
+
+**Answer:** Borrow without collateral, repay in same transaction.
+
+**Uses:**
+- Arbitrage
+- Collateral swapping
+- Debt refinancing
+
+**Fee:** Typically 0.09% (Aave) or 0.3% (Uniswap)
+
+### 25. Explain ERC-1155.
+
+**Answer:** Multi-token standard (fungible + NFT in one contract).
+
+```solidity
+interface IERC1155 {
+    function balanceOf(address account, uint256 id) external view returns (uint256);
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
+    function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;
+}
+```
+
+**Benefits:**
+- Batch transfers
+- Single contract for multiple tokens
+- Gas efficient
+
 ---
 
 ## System Design
@@ -5712,6 +5987,455 @@ Client -> Load Balancer -> Cache Cluster (Redis Cluster)
 - Cross-shard joins
 - Rebalancing
 - Distributed transactions
+
+### 9. Design a notification system.
+
+**Answer:**
+
+```
+User -> API -> Message Queue (Kafka) -> Workers -> Push/Email/SMS
+                                        |
+                                   Database (preferences)
+                                   Redis (online status)
+```
+
+**Key decisions:**
+- Separate queues by notification type
+- Exponential backoff retry
+- Per-user rate limiting
+
+### 10. What is eventual consistency?
+
+**Answer:** System guarantees all replicas will eventually become consistent.
+
+**Use cases:** DNS, caching, social media likes, leaderboards
+
+### 11. Explain message queues vs event streaming.
+
+**Answer:**
+
+| Message Queues | Event Streaming |
+|----------------|-----------------|
+| Point-to-point | Pub/Sub |
+| Message deleted | Messages retained |
+| Examples: SQS, RabbitMQ | Examples: Kafka, Pulsar |
+
+### 12. Design a distributed ID generator.
+
+**Answer:**
+
+**Approaches:**
+- **UUID**: 128-bit, no coordination needed
+- **Snowflake**: 64-bit (timestamp + machine ID + sequence)
+- **Database sequences**: Centralized, slow at scale
+
+### 13. What is a circuit breaker?
+
+**Answer:** Pattern to prevent cascading failures.
+
+```python
+class CircuitBreaker:
+    def __init__(self, threshold=5, timeout=60):
+        self.failures = 0
+        self.state = "CLOSED"
+        self.timeout = timeout
+    
+    def call(self, func):
+        if self.state == "OPEN":
+            if time.time() - self.last_failure > self.timeout:
+                self.state = "HALF_OPEN"
+            else:
+                raise Exception("Circuit open")
+        try:
+            result = func()
+            self.failures = 0
+            return result
+        except:
+            self.failures += 1
+            if self.failures >= self.threshold:
+                self.state = "OPEN"
+            raise
+```
+
+### 14. Design a feed system (like Twitter).
+
+**Answer:**
+
+**Approaches:**
+- **Pull**: Fetch from followed users on load
+- **Push**: Fan-out to follower caches on post
+- **Hybrid**: Push for active users, pull for celebrities
+
+### 15. Explain consistent hashing.
+
+**Answer:** Distribute data with minimal reorganization when nodes change.
+
+```python
+def get_node(key, nodes):
+    hash_val = hash(key)
+    for i in range(len(nodes) * 100):  # Virtual nodes
+        node = nodes[(hash_val + i) % len(nodes)]
+        return node
+```
+
+### 16. Design a rate limiter.
+
+**Answer:**
+
+**Algorithms:**
+- Token Bucket
+- Leaky Bucket
+- Sliding Window
+
+```python
+# Redis-based sliding window
+def is_allowed(user_id, limit=100, window=60):
+    key = f"rate:{user_id}"
+    now = time.time()
+    pipe = redis.pipeline()
+    pipe.zremrangebyscore(key, 0, now - window)
+    pipe.zadd(key, {str(now): now})
+    pipe.expire(key, window)
+    count = pipe.execute()[1]
+    return count <= limit
+```
+
+### 17. Design a URL shortener.
+
+**Answer:**
+
+**Requirements:** Shorten URLs, redirect, analytics, custom aliases
+
+**Design:**
+```
+Client -> LB -> API -> Cache (Redis) -> DB
+```
+
+**Key decisions:**
+- Base62 encoding for short codes
+- Distributed ID generator (Snowflake)
+- 301 redirect for SEO
+
+### 18. Design a chat application.
+
+**Answer:**
+
+```
+Client <-> WebSocket <-> Message Queue -> Message Store
+                         |
+                    Cache (online users)
+```
+
+**Key decisions:**
+- WebSocket for real-time
+- Shard by user ID
+- Store in NoSQL (write-heavy)
+
+### 19. Design a video streaming service.
+
+**Answer:**
+
+```
+Upload -> Transcoding -> CDN -> Client (HLS/DASH)
+```
+
+**Key decisions:**
+- Adaptive bitrate streaming
+- Edge caching for latency
+- Separate metadata/analytics stores
+
+### 20. What is load balancing?
+
+**Answer:** Distribute traffic across servers.
+
+**Algorithms:** Round Robin, Least Connections, IP Hash, Weighted
+
+**Tools:** Nginx, HAProxy, AWS ALB
+
+---
+
+## CI/CD
+
+### 1. What is CI/CD?
+
+**Answer:**
+- **CI (Continuous Integration)**: Automatically build, test, merge code
+- **CD (Continuous Delivery/Deployment)**: Automatically deploy to production
+
+**Pipeline stages:** Source -> Build -> Test -> Deploy
+
+### 2. Explain GitHub Actions.
+
+**Answer:**
+
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+```
+
+### 3. How to deploy with GitHub Actions?
+
+**Answer:**
+
+```yaml
+name: Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET }}
+          aws-region: us-east-1
+      
+      - run: aws s3 sync ./dist s3://my-bucket --delete
+      - run: aws cloudfront create-invalidation --distribution-id $CF_ID --paths "/*"
+```
+
+### 4. What is Jenkins?
+
+**Answer:** Automation server for CI/CD.
+
+```groovy
+// Jenkinsfile
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps { sh 'npm install && npm run build' }
+        }
+        stage('Test') {
+            steps { sh 'npm test' }
+        }
+        stage('Deploy') {
+            steps { sh 'kubectl apply -f k8s/' }
+        }
+    }
+}
+```
+
+### 5. Explain GitLab CI/CD.
+
+**Answer:**
+
+```yaml
+# .gitlab-ci.yml
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  image: node:20
+  script:
+    - npm install
+    - npm run build
+
+test:
+  stage: test
+  script:
+    - npm test
+
+deploy:
+  stage: deploy
+  script:
+    - docker build -t myapp .
+    - docker push myapp
+  only:
+    - main
+```
+
+### 6. CI/CD best practices?
+
+**Answer:**
+
+1. Small, frequent commits
+2. Fail fast - run quick tests first
+3. Use feature flags
+4. Environment parity (dev = staging = prod)
+5. Immutable artifacts
+6. Rollback strategy
+7. Security scanning (SAST, DAST)
+8. Monitor deployments
+
+### 7. What is ArgoCD?
+
+**Answer:** GitOps continuous delivery for Kubernetes.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: myapp
+spec:
+  source:
+    repoURL: https://github.com/myorg/myapp.git
+    targetRevision: HEAD
+    path: k8s/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: production
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+### 8. What is container security scanning?
+
+**Answer:** Scan images for vulnerabilities.
+
+```yaml
+# GitHub Actions with Trivy
+- name: Scan
+  uses: aquasecurity/trivy-action@master
+  with:
+    scan-type: 'fs'
+    format: 'sarif'
+    output: 'trivy-results.sarif'
+
+- name: Upload
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: 'trivy-results.sarif'
+```
+
+### 9. Canary vs Blue-Green deployment?
+
+**Answer:**
+
+| Canary | Blue-Green |
+|--------|------------|
+| Gradual rollout to subset | Full swap |
+| Monitor metrics | Instant switch |
+| Traffic splitting | Complete copy |
+
+```yaml
+# Kubernetes canary with weights
+annotations:
+  nginx.ingress.kubernetes.io/canary: "true"
+  nginx.ingress.kubernetes.io/canary-weight: "20"
+```
+
+### 10. What is a self-hosted runner?
+
+**Answer:** Your own server running GitHub Actions jobs.
+
+```bash
+# Setup
+mkdir actions-runner && cd actions-runner
+curl -O https://github.com/actions/runner/releases/download/v2.313.0/actions-runner-linux-x64-2.313.0.tar.gz
+tar xzf actions-runner-linux-x64-2.313.0.tar.gz
+./config.sh --url https://github.com/myorg/myrepo --token TOKEN
+./svc.sh install
+./svc.sh start
+```
+
+### 11. What is Infrastructure as Code (IaC)?
+
+**Answer:** Manage infrastructure via code.
+
+**Tools:**
+- Terraform
+- CloudFormation
+- Pulumi
+- Ansible
+
+```yaml
+# Terraform
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "my-bucket"
+}
+
+resource "aws_lambda_function" "my_function" {
+  function_name = "my-function"
+  role          = aws_iam_role.lambda.arn
+  handler       = "index.handler"
+  runtime       = "nodejs18.x"
+}
+```
+
+### 12. Explain deployment strategies.
+
+**Answer:**
+
+| Strategy | Description | Downtime |
+|----------|-------------|----------|
+| Rolling | Update pods gradually | No |
+| Blue-Green | Switch traffic instantly | No |
+| Canary | Gradual traffic shift | No |
+| Recreate | Kill all, create new | Yes |
+
+### 13. How to handle secrets in CI/CD?
+
+**Answer:**
+
+```yaml
+# GitHub Secrets
+# Store in Settings -> Secrets -> Actions
+# Access via ${{ secrets.SECRET_NAME }}
+
+# AWS Secrets Manager
+aws secretsmanager get-secret-value --secret-id my-secret
+
+# HashiCorp Vault
+vault kv get secret/myapp
+```
+
+### 14. What is GitOps?
+
+**Answer:** Git as single source of truth for infrastructure.
+
+**Principles:**
+1. Declarative configuration
+2. Versioned in Git
+3. Automatically synced
+4. Continuously reconciled
+
+**Tools:** ArgoCD, Flux, Jenkins X
+
+### 15. How to implement rollback in Kubernetes?
+
+**Answer:**
+
+```bash
+# Rollback deployment
+kubectl rollout undo deployment/myapp
+
+# Rollback to specific revision
+kubectl rollout undo deployment/myapp --to-revision=2
+
+# View rollout history
+kubectl rollout history deployment/myapp
+
+# Pause rollout
+kubectl rollout pause deployment/myapp
+
+# Resume rollout
+kubectl rollout resume deployment/myapp
+```
 
 ---
 
